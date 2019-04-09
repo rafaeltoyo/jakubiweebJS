@@ -1,13 +1,7 @@
-const testFolder = './config2/config.json';
-const fs = require('fs');
 
-fs.readFile(testFolder, (err, data) => {
-    console.log(err);
-    console.log(data);
-});
+const config = require('./src/utils/loader');
+config.start(console.log);
 
-/*
-fs.readdirSync(testFolder).forEach(file => {
-    console.log(file);
-});
-*/
+console.log(config.data.bot.token);
+console.log(config.data.bot.prefix);
+console.log(config.data.musicFolder);

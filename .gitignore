@@ -1,7 +1,7 @@
 
 # Custom
 
-config/*
+resources/*
 *.bat
 
 # Created by https://www.gitignore.io/api/node,visualstudiocode
