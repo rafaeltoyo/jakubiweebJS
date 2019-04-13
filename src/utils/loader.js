@@ -54,10 +54,14 @@ const Resources = function () {
     this.data = null;
 
     this.start = (logger) => {
-        if (logger != null) logger("Loading configurations ...");
-        createResourcesFolder(logger);
-        this.data = createConfigFile(logger);
+        
     };
 };
 
-module.exports = new Resources();
+module.exports = {
+    load(logger) {
+        if (logger != null) logger("Loading configurations ...");
+        createResourcesFolder(logger);
+        return createConfigFile(logger);
+    }
+};
