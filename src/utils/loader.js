@@ -1,10 +1,12 @@
 /**
- * @author Rafael Hideo Toyomoto
+ * @author rafaeltoyo
  * @description Config file loader
  */
 
 const fs = require('fs');
 const path = require('path');
+
+const Logger = require('./log');
 
 // Directories
 const APP_DIR = path.dirname(require.main.filename);
@@ -14,54 +16,77 @@ const MUSICS_DIR = APP_DIR + path.sep + 'musics';
 // Files
 const CONFIG_FILE = RESOURCES_DIR + path.sep + 'config.json';
 
-const createResourcesFolder = function (logger) {
+// ========================================================================== //
+
+/**
+ * Create resource folder if not exists
+ * 
+ * @author rafaeltoyo
+ */
+function createResourcesFolder() {
 
     try {
         fs.mkdirSync(RESOURCES_DIR, 0777);
-        if (logger != null) logger("Resource folder created!");
+        Logger.info("Resource folder created!");
     }
     catch (err) {
         if (err.code != 'EEXIST') throw err;
     }
-};
+}
 
-const createConfigFile = function (logger) {
-
-    let config = {
-        "bot": {
-            "token": "",
-            "prefix": "$"
-        },
-        "musicFolder": MUSICS_DIR
+/**
+ * Application parameters
+ * 
+ * @author rafaeltoyo
+ */
+class Configuration {
+    constructor() {
+        this.prefix = '$';
+        this.token = '';
+        this.musicFolder = MUSICS_DIR;
+        this.projectFolder = APP_DIR;
     }
 
-    try {
-        fd = fs.readFileSync(CONFIG_FILE, 'utf-8');
-        config = JSON.parse(fd);
-    }
-    catch (err) {
-        if (err.code === 'ENOENT') {
-            fs.writeFileSync(CONFIG_FILE, JSON.stringify(config), 'utf-8');
-            if (logger != null) logger("Default configurations created");
+    json() {
+        return {
+            bot: {
+                prefix: this.prefix,
+                token: this.token
+            },
+            musicFolder: this.musicFolder
         }
-        else throw err;
     }
 
-    return config;
-};
+    toString() {
+        return JSON.stringify(this.json());
+    }
 
-const Resources = function () {
-    this.data = null;
+    load() {
+        createResourcesFolder();
 
-    this.start = (logger) => {
-        
-    };
-};
+        try {
+            let fd = fs.readFileSync(CONFIG_FILE, 'utf-8');
+            let config = JSON.parse(fd);
+
+            this.prefix = config.bot.prefix;
+            this.token = config.bot.token;
+            this.musicFolder = config.bot.musicFolder;
+        }
+        catch (err) {
+            if (err.code === 'ENOENT') {
+                this.save();
+                Logger.info("Default configuration created");
+            }
+            else throw err;
+        }
+    }
+
+    save(logger) {
+        fs.writeFileSync(CONFIG_FILE, this.toString(), 'utf-8');
+    }
+}
 
 module.exports = {
-    load(logger) {
-        if (logger != null) logger("Loading configurations ...");
-        createResourcesFolder(logger);
-        return createConfigFile(logger);
-    }
-};
+    createResourcesFolder: createResourcesFolder,
+    Configuration: Configuration
+}
