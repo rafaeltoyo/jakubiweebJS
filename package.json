@@ -1,0 +1,21 @@
+{
+  "name": "jakubiweeb",
+  "version": "1.0.0",
+  "description": "Discord bot",
+  "main": "index.js",
+  "scripts": {
+    "babel": "babel-node index.js",
+    "babel-debug": "babel-node index.js --debug"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rafaeltoyo/jakubiweebJS"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "weeb"
+  ],
+  "author": "rafaeltoyo",
+  "license": "MIT"
+}

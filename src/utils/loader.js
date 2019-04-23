@@ -26,7 +26,7 @@ const CONFIG_FILE = RESOURCES_DIR + path.sep + 'config.json';
 function createResourcesFolder() {
 
     try {
-        fs.mkdirSync(RESOURCES_DIR, 0777);
+        fs.mkdirSync(RESOURCES_DIR, 777);
         Logger.info("Resource folder created!");
     }
     catch (err) {
@@ -41,6 +41,9 @@ function createResourcesFolder() {
  */
 class Configuration {
     constructor() {
+        /**
+         * @type {String}
+         */
         this.prefix = '$';
         this.token = '';
         this.musicFolder = MUSICS_DIR;

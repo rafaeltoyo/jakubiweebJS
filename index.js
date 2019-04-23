@@ -1,4 +1,4 @@
-const Discord = require('discord.js');
+import {Jakubiweeb} from "./src/bot";
 
-const bot = require('./src/bot');
-bot.start();
+const bot = new Jakubiweeb();
+bot.run();
