@@ -1,10 +1,5 @@
-/**
- * @author rafaeltoyo
- * @description Config file loader
- */
-
-const fs = require('fs');
-const path = require('path');
+import fs from "fs";
+import path from "path";
 
 const Logger = require('./log');
 
@@ -23,7 +18,7 @@ const CONFIG_FILE = RESOURCES_DIR + path.sep + 'config.json';
  * 
  * @author rafaeltoyo
  */
-function createResourcesFolder() {
+export function createResourcesFolder() {
 
     try {
         fs.mkdirSync(RESOURCES_DIR, 777);
@@ -39,7 +34,7 @@ function createResourcesFolder() {
  * 
  * @author rafaeltoyo
  */
-class Configuration {
+export class Configuration {
     constructor() {
         /**
          * @type {String}
@@ -87,9 +82,4 @@ class Configuration {
     save(logger) {
         fs.writeFileSync(CONFIG_FILE, this.toString(), 'utf-8');
     }
-}
-
-module.exports = {
-    createResourcesFolder: createResourcesFolder,
-    Configuration: Configuration
 }

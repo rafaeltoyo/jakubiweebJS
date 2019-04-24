@@ -1,8 +1,9 @@
 import { Message, Client, Collection, RichEmbed } from "discord.js";
 
-import { loadCommands, parseCommand } from "./loader";
-import { BaseCommand, HelpCmd } from "./command";
-import { Configuration } from "./utils/loader";
+import { Configuration } from "../utils/loader";
+import Logger from "../utils/log";
+import * as CustomError from "./error";
+import { loadCommands, parseCommand, BaseCommand, HelpCmd } from "./command";
 
 /**
  * Classe principal do bot
@@ -11,7 +12,9 @@ import { Configuration } from "./utils/loader";
  */
 export class Jakubiweeb {
     constructor() {
-        // Create a client and load commands
+        /**
+         * @type {Client}
+         */
         this.client = new Client();
         this.client.commands = new Collection();
 
@@ -28,6 +31,9 @@ export class Jakubiweeb {
         this.help = new HelpCmd();
     }
 
+    /**
+     * Iniciar o bot e colocar para funcionar
+     */
     run() {
         this.config.load();
         this.client.commands = loadCommands(this.getCommands());
@@ -39,15 +45,18 @@ export class Jakubiweeb {
         this.client.login(this.config.token);
     }
 
+    /**
+     * Função executada após o bot iniciar
+     */
     onStart() {
-        console.log("Jakubiweeb on!");
-        console.log("Prefix ...: " + this.config.prefix);
-        console.log("Token ....: " + this.config.token);
-        console.log("Music ....: " + this.config.musicFolder);
+        Logger.info("Jakubiweeb on!");
+        Logger.info("Prefix ...: " + this.config.prefix);
+        Logger.info("Token ....: " + this.config.token);
+        Logger.info("Music ....: " + this.config.musicFolder);
     }
 
     /**
-     * 
+     * Função executada após o bot receber uma mensagem
      * @param {Message} message 
      */
     onUpdate(message) {
@@ -59,27 +68,28 @@ export class Jakubiweeb {
         const { command, args } = parseCommand(prefix, message);
         const handler = this.getCommand(command);
 
-        console.log("Message received: " + message);
-        console.log("Command ..: " + command);
-        console.log("Args .....: " + args.join(" "));
+        Logger.info("Message received: " + message);
+        Logger.info("Command ..: " + command);
+        Logger.info("Args .....: " + args.join(" "));
 
-        let error = null;
+        try {
+            if (handler === null)
+                throw new CustomError.InvalidCmdError(this.getCommands());
 
-        if (handler === null) {
-            error = this.createInvalidCommandError();
-        }
-        else if (handler.guildOnly && message.channel.type !== "text") {
-            error = this.createGuildOnlyError();
-        }
-        else if (handler.args && args.length <= 0) {
-            error = this.createNumArgsError();
-        }
+            if (handler.guildOnly && message.channel.type !== "text")
+                throw new CustomError.GuildOnlyCmdError(handler);
 
-        if (error === null) {
+            if (handler.args && args.length <= 0)
+                throw new CustomError.ArgsRequiredCmdError(handler);
+
             handler.execute(this, message, ...args);
         }
-        else {
-            message.channel.send(error);
+        catch (e) {
+            if (e instanceof CustomError.BiakError) {
+                message.channel.send(e.getEmbed())
+                    .then(m => Logger.log(m.content))
+                    .catch(Logger.err);
+            }
         }
     }
 
@@ -109,28 +119,4 @@ export class Jakubiweeb {
         return this.client.commands;
     }
 
-    createGuildOnlyError() {
-        let error = new RichEmbed();
-        error.setColor("#ff4444");
-        error.setTitle("Ops!");
-        error.setDescription("Vem pro lab livre fazer esse experimento.");
-        return error;
-    }
-
-    createNumArgsError(cmd) {
-        let error = new RichEmbed();
-        error.setColor("#ff4444");
-        error.setTitle("Tá faltando um resistor nesse circuito ...");
-        error.setDescription("Esquemático: " + cmd.usage);
-        return error;
-    }
-
-    createInvalidCommandError() {
-        let error = new RichEmbed();
-        error.setColor("#ff4444");
-        error.setTitle("Não achei esse CI na Beta!");
-        error.setDescription("Já que você tá na Disney, vou mostrar os produtos da nossa lojinha:");
-        this.getCommands().forEach(cmd => error.addField(cmd.name, cmd.description));
-        return error;
-    }
 }

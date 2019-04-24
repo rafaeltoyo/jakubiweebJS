@@ -1,6 +1,6 @@
 import { Message } from "discord.js";
-import { Jakubiweeb } from "./../bot";
-import { BaseCommand } from "./../command";
+import { Jakubiweeb } from "../bot";
+import { BaseCommand } from "../command";
 
 /**
  * Comando <join>
