@@ -13,6 +13,11 @@ export class BiakError extends Error {
      */
     constructor(title, description) {
         super(title + " ==> " + description);
+
+        this.constructor = BiakError;
+        this.__proto__ = BiakError.prototype;
+
+        this.name = "BiakError";
         this.title = title;
         this.description = description;
     }
@@ -27,6 +32,42 @@ export class BiakError extends Error {
         error.setTitle(this.title);
         error.setDescription(this.description);
         return error;
+    }
+}
+
+/**
+ * @author rafaeltoyo
+ */
+export class NotImplementedError extends BiakError {
+    /**
+     * 
+     */
+    constructor() {
+        super(
+            "Não implementado",
+            "Funcionalidade ainda não implementada pelos Devs"
+        );
+
+        this.constructor = NotImplementedError;
+        this.__proto__ = NotImplementedError.prototype;
+    }
+}
+
+/**
+ * @author rafaeltoyo
+ */
+export class NotInVoiceChannelError extends BiakError {
+    /**
+     * 
+     */
+    constructor() {
+        super(
+            "Ops",
+            "Tá fora da festinha, sem rosquinha para você!"
+        );
+
+        this.constructor = NotInVoiceChannelError;
+        this.__proto__ = NotInVoiceChannelError.prototype;
     }
 }
 
@@ -46,6 +87,10 @@ export class CommandError extends BiakError {
      */
     constructor(title, description, command) {
         super(title, description);
+
+        this.constructor = CommandError;
+        this.__proto__ = CommandError.prototype;
+
         this.command = command;
     }
 }
@@ -64,6 +109,9 @@ export class GuildOnlyCmdError extends CommandError {
             "Vem pro lab livre fazer esse experimento.",
             command
         );
+
+        this.constructor = GuildOnlyCmdError;
+        this.__proto__ = GuildOnlyCmdError.prototype;
     }
 }
 
@@ -81,6 +129,9 @@ export class ArgsRequiredCmdError extends CommandError {
             "Esquemático: " + command.usage,
             command
         );
+
+        this.constructor = ArgsRequiredCmdError;
+        this.__proto__ = ArgsRequiredCmdError.prototype;
     }
 }
 
@@ -98,6 +149,10 @@ export class InvalidCmdError extends CommandError {
             "Já que você tá na Disney, vou mostrar os produtos da nossa lojinha:",
             null
         );
+
+        this.constructor = InvalidCmdError;
+        this.__proto__ = InvalidCmdError.prototype;
+
         this.commands = commands;
     }
     getEmbed() {
@@ -105,4 +160,38 @@ export class InvalidCmdError extends CommandError {
         this.commands.forEach(cmd => error.addField(cmd.name, cmd.description));
         return error;
     }
+}
+
+/**
+ * @author rafaeltoyo
+ */
+export class DiscordOnlyCmdError extends CommandError {
+    /**
+     * 
+     * @param {BaseCommand} command Comando
+     */
+    constructor(command) {
+        super(
+            "Ops!",
+            "Comando <" + command.name + "> disponível apenas para discord.",
+            command
+        );
+
+        this.constructor = DiscordOnlyCmdError;
+        this.__proto__ = DiscordOnlyCmdError.prototype;
+    }
+}
+
+/**
+ * @param {Error} error
+ * @return {RichEmbed}
+ */
+export function customErrorHandler(error) {
+    if (error instanceof BiakError || error.name === "BiakError")
+        return error.getEmbed();
+
+    return (new RichEmbed())
+        .setColor("#ff4444")
+        .setTitle("Algo deu errado!")
+        .setDescription(error.message);
 }

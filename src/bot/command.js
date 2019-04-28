@@ -3,6 +3,7 @@ import fs from "fs";
 
 import { Collection, Message, RichEmbed } from "discord.js";
 import { Jakubiweeb } from "./bot";
+import * as CustomError from "./error";
 
 /**
  * Carrega os comandos na pasta ./src/commands
@@ -26,11 +27,11 @@ export function loadCommands(commands) {
 /**
  * 
  * @param {string} prefix 
- * @param {Message} message 
+ * @param {string} message 
  * @return {{string,any[]}}
  */
 export function parseCommand(prefix, message) {
-    const args = message.content.trim().slice(prefix.length).split(/ +/);
+    const args = message.trim().slice(prefix.length).split(/ +/);
     const command = args.shift().toLowerCase();
     return { command: command, args: args }
 }
@@ -51,8 +52,9 @@ export class BaseCommand {
      * @param {Number} cooldown 
      * @param {boolean} args
      * @param {boolean} guildOnly
+     * @param {boolean} discordOnly
      */
-    constructor(name, description, aliases, usage, cooldown, args, guildOnly) {
+    constructor(name, description, aliases, usage, cooldown, args, guildOnly, discordOnly) {
         this.name = name;
         this.description = description;
         this.aliases = aliases;
@@ -60,6 +62,7 @@ export class BaseCommand {
         this.cooldown = cooldown;
         this.args = args;
         this.guildOnly = guildOnly;
+        this.discordOnly = discordOnly;
     }
 
     /**
@@ -70,7 +73,18 @@ export class BaseCommand {
      * @param {string[]} args Argumentos fornecidos para o comando.
      */
     execute(bot, msg, ...args) {
+        throw new CustomError.NotImplementedError();
+    }
 
+    /**
+     * @implements Implementar comportamento do comando
+     * 
+     * @param {Jakubiweeb} bot Contexto da invocação do comando.
+     * @param {string[]} args Argumentos fornecidos para o comando.
+     * @return {string} Resposta ao terminal
+     */
+    execTerminal(bot, ...args) {
+        throw new CustomError.NotImplementedError();
     }
 
     /**
@@ -103,6 +117,7 @@ export class HelpCmd extends BaseCommand {
             ["commands"],
             "[help] or [help <command>]",
             5,
+            false,
             false,
             false
         );
@@ -137,6 +152,26 @@ export class HelpCmd extends BaseCommand {
             this.deleteLastMessage(() => this.sendNewMessage(msg.channel, embed));
         else
             this.sendNewMessage(msg.channel, embed);
+    }
+
+    /**
+     * 
+     * @param {Jakubiweeb} bot Contexto da invocação do comando.
+     * @param {string[]} args Argumentos fornecidos para o comando.
+     */
+    execTerminal(bot, ...args) {
+        if (args.length === 1 && args[0].length > 0) {
+            let cmd = bot.getCommand(args[0].toLowerCase());
+            if (cmd instanceof BaseCommand)
+                return "Command " + cmd.name + ":\n usage: " + cmd.usage + "\n";
+        }
+        
+        let response = "list of commands:\n";
+        bot.getCommands().forEach(cmd => {
+            if (!cmd.discordOnly)
+                response += "[" + cmd.name + "] " + cmd.description + "\n";
+        });
+        return response;
     }
 
     sendNewMessage(channel, embed) {

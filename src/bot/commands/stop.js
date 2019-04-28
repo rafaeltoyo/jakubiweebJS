@@ -4,17 +4,17 @@ import { BaseCommand } from "../command";
 import { customErrorHandler } from "../error";
 
 /**
- * Comando <join>
+ * Comando <stop>
  * 
  * @author rafaeltoyo
  */
-class Join extends BaseCommand {
+class Stop extends BaseCommand {
     constructor() {
         super(
-            "join",
-            "Tem alguma dúvida? Me chama pra ver esse osciloscôpio.",
-            ["summon"],
-            "[join]",
+            "stop",
+            "Por hoje é isso amiguinhos.",
+            ["bye"],
+            "[stop]",
             5,
             false,
             true,
@@ -29,9 +29,9 @@ class Join extends BaseCommand {
      */
     execute(bot, msg) {
         const state = bot.states.getState(msg.guild);
-        state.reconnect(msg)
+        state.disconnect()
             .then(conn => {
-                msg.reply("Watashi ga Kita!")
+                msg.reply(":(")
             })
             .catch(error => {
                 msg.channel.send(customErrorHandler(error));
@@ -39,4 +39,4 @@ class Join extends BaseCommand {
     }
 }
 
-module.exports = new Join();
+module.exports = new Stop();
