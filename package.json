@@ -1,21 +1,38 @@
 {
-  "name": "jakubiweeb",
+  "name": "lolibiak",
   "version": "1.0.0",
   "description": "Discord bot",
   "main": "index.js",
   "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
     "babel": "babel-node index.js",
     "babel-debug": "babel-node index.js --debug"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/rafaeltoyo/jakubiweebJS"
+    "url": "git+https://github.com/rafaeltoyo/jakubiweebJS.git"
   },
   "keywords": [
     "discord",
     "bot",
-    "weeb"
+    "javascript"
   ],
   "author": "rafaeltoyo",
-  "license": "MIT"
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rafaeltoyo/jakubiweebJS/issues"
+  },
+  "homepage": "https://github.com/rafaeltoyo/jakubiweebJS#readme",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0"
+  },
+  "dependencies": {
+    "bufferutil": "^4.0.1",
+    "discord.js": "^11.4.2",
+    "erlpack": "github:hammerandchisel/erlpack",
+    "libsodium-wrappers": "^0.7.4",
+    "node-opus": "^0.3.1",
+    "uws": "^100.0.1"
+  }
 }

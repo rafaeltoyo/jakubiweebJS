@@ -27,7 +27,12 @@ export class State {
         this.voiceChannel = undefined;
     }
 
+    // =========================================================================
+    // Manipulação da conexão em um canal de voz
+
     /**
+     * Conectar ao canal de voz de uma mensagem.
+     * Se já estiver em um canal, desconecta dele e muda para o outro.
      * 
      * @param {Discord.Message} message 
      * @return {Discord.VoiceConnection}
@@ -44,6 +49,9 @@ export class State {
     }
 
     /**
+     * Conectar ao canal de voz de uma mensagem.
+     * Cuidado se já houve uma conexão, pois ela não é tratada nesse método.
+     * Caso haja uma conexão já aberta, utilize o <reconnect(msg)>.
      * 
      * @param {Discord.Message} message 
      * @return {Promise<Discord.VoiceConnection>}
@@ -68,6 +76,8 @@ export class State {
     }
 
     /**
+     * Desconectar do canal de voz
+     * 
      * @return {Promise}
      */
     disconnect() {
@@ -88,17 +98,24 @@ export class State {
     }
 
     // =========================================================================
+    // Manipular a conexão de voz enviando streaming de dados
+
+    // =========================================================================
+    // Auxiliares
 
     /**
+     * Extrair o canal de voz da mensagem
      * 
      * @param {Discord.Message} message
-     * @return {Discord.VoiceChannel} 
+     * @return {Promise} 
      */
     getVoiceChannel(message) {
         return new Promise((resolve, reject) => {
             const voiceChannel = message.member.voiceChannel;
-            if (!voiceChannel) reject(new CustomError.NotInVoiceChannelError());
-            resolve(voiceChannel);
+            if (!voiceChannel)
+                reject(new CustomError.NotInVoiceChannelError());
+            else
+                resolve(voiceChannel);
         });
     }
 }
