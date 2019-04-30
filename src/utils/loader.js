@@ -36,11 +36,14 @@ export function createResourcesFolder() {
  */
 export class Configuration {
     constructor() {
-        /**
-         * @type {String}
-         */
-        this.prefix = '$';
-        this.token = '';
+        this.bot = {
+            token: '',
+            prefix: '$'
+        }
+        this.ytdl = {
+            token: '',
+            regionCode: 'BR',
+        }
         this.musicFolder = MUSICS_DIR;
         this.projectFolder = APP_DIR;
     }
@@ -48,8 +51,12 @@ export class Configuration {
     json() {
         return {
             bot: {
-                prefix: this.prefix,
-                token: this.token
+                token: this.bot.token,
+                prefix: this.bot.prefix
+            },
+            ytdl: {
+                token: this.ytdl.token,
+                regionCode: this.ytdl.regionCode
             },
             musicFolder: this.musicFolder
         }
@@ -66,9 +73,9 @@ export class Configuration {
             let fd = fs.readFileSync(CONFIG_FILE, 'utf-8');
             let config = JSON.parse(fd);
 
-            this.prefix = config.bot.prefix;
-            this.token = config.bot.token;
-            this.musicFolder = config.bot.musicFolder;
+            this.bot = config.bot;
+            this.ytdl = config.ytdl;
+            this.musicFolder = config.musicFolder;
         }
         catch (err) {
             if (err.code === 'ENOENT') {

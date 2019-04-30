@@ -5,7 +5,7 @@ import { Configuration } from "../utils/loader";
 import Logger from "../utils/log";
 import * as CustomError from "./error";
 import { loadCommands, parseCommand, BaseCommand, HelpCmd } from "./command";
-import {StateController} from "./voice/state";
+import { StateController } from "./voice/state";
 
 /**
  * Classe principal do bot
@@ -51,7 +51,7 @@ export class Jakubiweeb {
         this.client.on('message', (m) => this.onUpdate(m));
         this.terminal.on('line', (m) => this.onTerminalInput(m));
 
-        this.client.login(this.config.token);
+        this.client.login(this.config.bot.token);
     }
 
     /**
@@ -59,8 +59,8 @@ export class Jakubiweeb {
      */
     onStart() {
         Logger.info("Jakubiweeb on!");
-        Logger.info("Prefix ...: " + this.config.prefix);
-        Logger.info("Token ....: " + this.config.token);
+        Logger.info("Prefix ...: " + this.config.bot.prefix);
+        Logger.info("Token ....: " + this.config.bot.token);
         Logger.info("Music ....: " + this.config.musicFolder);
     }
 
@@ -69,7 +69,7 @@ export class Jakubiweeb {
      * @param {Message} message 
      */
     onUpdate(message) {
-        let prefix = this.config.prefix;
+        let prefix = this.config.bot.prefix;
 
         if (!message.content.startsWith(prefix) || message.author.bot)
             return false;

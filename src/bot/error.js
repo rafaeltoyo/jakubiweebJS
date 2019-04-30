@@ -38,6 +38,31 @@ export class BiakError extends Error {
 /**
  * @author rafaeltoyo
  */
+export class SimpleBiakError extends BiakError {
+    /**
+     * @param {string} content
+     */
+    constructor(content) {
+        super("", content);
+
+        this.constructor = SimpleBiakError;
+        this.__proto__ = SimpleBiakError.prototype;
+    }
+    /**
+     * Gerar uma mensagem formatada
+     * @return {RichEmbed} Mensagem formatada
+     */
+    getEmbed() {
+        let error = new RichEmbed();
+        error.setColor("#ff4444");
+        error.setDescription(this.description);
+        return error;
+    }
+}
+
+/**
+ * @author rafaeltoyo
+ */
 export class NotImplementedError extends BiakError {
     /**
      * 
