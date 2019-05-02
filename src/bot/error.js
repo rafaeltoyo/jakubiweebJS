@@ -2,7 +2,24 @@ import { RichEmbed } from "discord.js";
 import { BaseCommand } from "./command";
 
 /**
+ * Tratar erros para envio de mensagem para o discord
+ * 
+ * @param {Error} error
+ * @return {RichEmbed}
+ */
+export function customErrorHandler(error) {
+    if (error instanceof BiakError || error.name === "BiakError")
+        return error.getEmbed();
+
+    return (new RichEmbed())
+        .setColor("#ff4444")
+        .setTitle("Algo deu errado!")
+        .setDescription(error.message);
+}
+
+/**
  * Erro personalizado para minha aplicação
+ * 
  * @author rafaeltoyo
  */
 export class BiakError extends Error {
@@ -12,7 +29,7 @@ export class BiakError extends Error {
      * @param {string} description Descrição do erro
      */
     constructor(title, description) {
-        super(title + " ==> " + description);
+        super(((title) ? title + " ==> " : '') + description);
 
         this.constructor = BiakError;
         this.__proto__ = BiakError.prototype;
@@ -29,8 +46,10 @@ export class BiakError extends Error {
     getEmbed() {
         let error = new RichEmbed();
         error.setColor("#ff4444");
-        error.setTitle(this.title);
-        error.setDescription(this.description);
+        if (this.title)
+            error.setTitle(this.title);
+        if (this.description)
+            error.setDescription(this.description);
         return error;
     }
 }
@@ -43,20 +62,10 @@ export class SimpleBiakError extends BiakError {
      * @param {string} content
      */
     constructor(content) {
-        super("", content);
+        super(null, content);
 
         this.constructor = SimpleBiakError;
         this.__proto__ = SimpleBiakError.prototype;
-    }
-    /**
-     * Gerar uma mensagem formatada
-     * @return {RichEmbed} Mensagem formatada
-     */
-    getEmbed() {
-        let error = new RichEmbed();
-        error.setColor("#ff4444");
-        error.setDescription(this.description);
-        return error;
     }
 }
 
@@ -87,7 +96,7 @@ export class NotInVoiceChannelError extends BiakError {
      */
     constructor() {
         super(
-            "Ops",
+            null,
             "Tá fora da festinha, sem rosquinha para você!"
         );
 
@@ -130,7 +139,7 @@ export class GuildOnlyCmdError extends CommandError {
      */
     constructor(command) {
         super(
-            "Ops!",
+            null,
             "Vem pro lab livre fazer esse experimento.",
             command
         );
@@ -197,7 +206,7 @@ export class DiscordOnlyCmdError extends CommandError {
      */
     constructor(command) {
         super(
-            "Ops!",
+            null,
             "Comando <" + command.name + "> disponível apenas para discord.",
             command
         );
@@ -205,18 +214,4 @@ export class DiscordOnlyCmdError extends CommandError {
         this.constructor = DiscordOnlyCmdError;
         this.__proto__ = DiscordOnlyCmdError.prototype;
     }
-}
-
-/**
- * @param {Error} error
- * @return {RichEmbed}
- */
-export function customErrorHandler(error) {
-    if (error instanceof BiakError || error.name === "BiakError")
-        return error.getEmbed();
-
-    return (new RichEmbed())
-        .setColor("#ff4444")
-        .setTitle("Algo deu errado!")
-        .setDescription(error.message);
 }

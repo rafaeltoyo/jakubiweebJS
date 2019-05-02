@@ -1,11 +1,16 @@
 import Readline from "readline";
-import { Message, Client, Collection, RichEmbed } from "discord.js";
+import Discord from "discord.js";
 
 import { Configuration } from "../utils/loader";
 import Logger from "../utils/log";
+
 import * as CustomError from "./error";
+
 import { loadCommands, parseCommand, BaseCommand, HelpCmd } from "./command";
-import { StateController } from "./voice/state";
+
+import { YoutubeAPI } from "./api/youtube";
+
+import { GuildStateController } from "./voice/state";
 
 /**
  * Classe principal do bot
@@ -14,15 +19,16 @@ import { StateController } from "./voice/state";
  */
 export class Jakubiweeb {
     constructor() {
-        /** @type {Client} */
-        this.client = new Client();
-        this.client.commands = new Collection();
+        /** @type {Discord.Client} */
+        this.client = new Discord.Client();
+        this.client.commands = new Discord.Collection();
 
         /**
          * Configurações
          * @type {Configuration}
          */
         this.config = new Configuration();
+        this.config.load();
 
         /**
          * Comando Help
@@ -30,8 +36,12 @@ export class Jakubiweeb {
          */
         this.help = new HelpCmd();
 
-        /** @type {StateController} */
-        this.states = new StateController();
+        /** @type {GuildStateController} */
+        this.states = new GuildStateController();
+
+        this.api = {
+            yt: new YoutubeAPI(this.config.ytdl.token, this.config.ytdl.regionCode)
+        };
 
         this.terminal = Readline.createInterface({
             input: process.stdin,
@@ -43,7 +53,6 @@ export class Jakubiweeb {
      * Iniciar o bot e colocar para funcionar
      */
     run() {
-        this.config.load();
         this.client.commands = loadCommands(this.getCommands());
         //this.client.commands.set(this.help.name, this.help);
 
@@ -60,13 +69,13 @@ export class Jakubiweeb {
     onStart() {
         Logger.info("Jakubiweeb on!");
         Logger.info("Prefix ...: " + this.config.bot.prefix);
-        Logger.info("Token ....: " + this.config.bot.token);
+        //Logger.info("Token ....: " + this.config.bot.token);
         Logger.info("Music ....: " + this.config.musicFolder);
     }
 
     /**
      * Função executada após o bot receber uma mensagem
-     * @param {Message} message 
+     * @param {Discord.Message} message 
      */
     onUpdate(message) {
         let prefix = this.config.bot.prefix;
@@ -103,7 +112,7 @@ export class Jakubiweeb {
      */
     onTerminalInput(m) {
         if (!m.startsWith('/'))
-            return
+            return false;
         const { command, args } = parseCommand('/', m);
 
         if (command == "exit") {
@@ -131,13 +140,16 @@ export class Jakubiweeb {
      * Função executada antes do Bot encerrar suas atividades
      */
     onFinished() {
-        this.states.destroyAll()
+        (async () => Logger.info("Stopping the bot ..."))()
+            .then(() => { return this.states.destroyAll() })
             .then(() => { return this.client.destroy() })
             .then(() => process.exit(0))
-            .catch((error) => {
-                Logger.err(error);
-                process.exit(1);
-            });
+            .catch(e => this.onError(e));
+    }
+
+    onError(error) {
+        Logger.err(error);
+        process.exit(1);
     }
 
     // =========================================================================
@@ -160,7 +172,7 @@ export class Jakubiweeb {
     /**
      * Retornar os comandos cadastrados no bot
      * 
-     * @return {Collection<String, BaseCommand>} Lista de comandos
+     * @return {Discord.Collection<String, BaseCommand>} Lista de comandos
      */
     getCommands() {
         return this.client.commands;
@@ -169,7 +181,7 @@ export class Jakubiweeb {
     /**
      * Validar a pre-execução do comando
      * 
-     * @param {Message} message Mensagem que invocou o comando
+     * @param {Discord.Message} message Mensagem que invocou o comando
      * @param {BaseCommand} command Comando chamado
      * @param {{string,any[]}} args Argumentos passados
      */

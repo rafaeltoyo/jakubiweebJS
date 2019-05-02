@@ -108,6 +108,7 @@ export class BaseCommand {
  * Comando <help>
  * 
  * @author rafaeltoyo
+ * @todo Paginação na lista de comandos
  */
 export class HelpCmd extends BaseCommand {
     constructor() {

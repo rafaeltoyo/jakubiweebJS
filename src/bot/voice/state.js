@@ -1,14 +1,83 @@
 import Discord from "discord.js";
-import { MusicPlayer } from "./music";
-import Logger from "../../utils/log";
+import { MusicPlayer, Music } from "./music";
 import * as CustomError from "../error";
 
+
 /**
- * Representação de um estado do bot em um servidor
- * 
+ * =============================================================================
+ * Requisição para alguma funcionalidade do <GuildStateController>
+ * -----------------------------------------------------------------------------
  * @author rafaeltoyo
+ * =============================================================================
  */
-export class State {
+export class Request {
+    /**
+     * @param {Discord.Message} message Mensagem enviada
+     */
+    constructor(message) {
+        /** @type {Discord.Guild} */
+        this.guild = undefined;
+
+        /** @type {Discord.TextChannel} */
+        this.textChannel = undefined;
+
+        /** @type {Discord.VoiceChannel} */
+        this.voiceChannel = undefined;
+
+        /** @type {Discord.Message} */
+        this.message = message;
+
+        // Processar a mensagem
+        this.parse(message);
+
+        /** @type {Music} */
+        this.music = undefined;
+
+        /** @type {Discord.Message[]} */
+        this.enqueuedMsgs = [];
+    }
+
+    async notifyEnqueuedMusic() {
+        if (!this.music)
+            throw new TypeError("Request without music!");
+        this.music.stop();
+        return await this.textChannel.send(this.music.getEmbed());
+    }
+
+    async notifyPlayingMusic() {
+        if (!this.music)
+            throw new TypeError("Request without music!");
+        if (this.music.status !== Music.PLAYING)
+            throw new TypeError("Stopped music!");
+        return await this.textChannel.send(this.music.getEmbed());
+    }
+
+    /**
+     * Extrair informações de uma mensagem
+     * 
+     * @param {Discord.Message} message
+     * @return {Promise<Discord.VoiceChannel>} 
+     */
+    parse(message) {
+        this.guild = message.guild;
+        this.textChannel = message.channel;
+        if (!this.guild || !(this.textChannel instanceof Discord.TextChannel))
+            throw new CustomError.GuildOnlyCmdError();
+
+        this.voiceChannel = message.member.voiceChannel;
+        if (!this.voiceChannel)
+            throw new CustomError.NotInVoiceChannelError();
+    }
+}
+
+/**
+ * =============================================================================
+ * Representação de um estado do bot em um servidor
+ * -----------------------------------------------------------------------------
+ * @author rafaeltoyo
+ * =============================================================================
+ */
+export class GuildState {
     /**
      * 
      * @param {Discord.Guild} guild
@@ -18,7 +87,7 @@ export class State {
         this.guild = guild;
 
         /** @type {MusicPlayer} */
-        this.player = new MusicPlayer();
+        this.player = undefined;
 
         /** @type {Discord.TextChannel} */
         this.textChannel = undefined;
@@ -27,21 +96,25 @@ export class State {
         this.voiceChannel = undefined;
     }
 
-    // =========================================================================
+    //--------------------------------------------------------------------------
     // Manipulação da conexão em um canal de voz
 
     /**
-     * Conectar ao canal de voz de uma mensagem.
+     * Conectar ao canal de voz.
      * Se já estiver em um canal, desconecta dele e muda para o outro.
      * 
-     * @param {Discord.Message} message 
+     * @param {Discord.VoiceChannel} voiceChannel 
      * @return {Discord.VoiceConnection}
      */
-    async reconnect(message) {
+    async reconnect(voiceChannel) {
         try {
-            if (this.voiceChannel)
-                await this.disconnect();
-            return await this.connect(message);
+            if (this.voiceChannel) {
+                if (this.voiceChannel.id === voiceChannel.id)
+                    return this.voiceChannel.connection;
+                else
+                    this.disconnect();
+            }
+            return await this.connect(voiceChannel);
         }
         catch (error) {
             throw error;
@@ -49,30 +122,24 @@ export class State {
     }
 
     /**
-     * Conectar ao canal de voz de uma mensagem.
+     * Conectar ao canal de voz.
      * Cuidado se já houve uma conexão, pois ela não é tratada nesse método.
      * Caso haja uma conexão já aberta, utilize o <reconnect(msg)>.
      * 
-     * @param {Discord.Message} message 
+     * @param {Discord.VoiceChannel} voiceChannel 
      * @return {Promise<Discord.VoiceConnection>}
      */
-    connect(message) {
-        return new Promise((resolve, reject) => {
-            return this.getVoiceChannel(message)
-                .then(voiceChannel => {
-                    this.textChannel = message.channel;
-                    this.voiceChannel = voiceChannel;
-                    return voiceChannel.join();
-                })
-                .then(conn => {
-                    resolve(conn);
-                })
-                .catch(error => {
-                    this.textChannel = undefined;
-                    this.voiceChannel = undefined;
-                    reject(error);
-                });
-        });
+    async connect(voiceChannel) {
+        try {
+            const conn = await voiceChannel.join();
+            this.voiceChannel = voiceChannel;
+            this.player = new MusicPlayer(this.voiceChannel.connection);
+            return conn;
+        }
+        catch (error) {
+            this.voiceChannel = undefined;
+            throw error;
+        }
     }
 
     /**
@@ -81,60 +148,62 @@ export class State {
      * @return {Promise}
      */
     disconnect() {
-        return new Promise((resolve, reject) => {
-            try {
-                if (!this.voiceChannel)
-                    throw new CustomError.NotInVoiceChannelError();
-                this.voiceChannel.leave();
-                resolve();
-            }
-            catch (error) {
-                reject(error);
-            }
-            finally {
-                this.voiceChannel = undefined;
-            }
-        });
+        try {
+            if (!this.voiceChannel)
+                throw new CustomError.NotInVoiceChannelError();
+            this.voiceChannel.leave();
+        }
+        catch (error) {
+            throw error;
+        }
+        finally {
+            this.voiceChannel = undefined;
+        }
     }
 
-    // =========================================================================
-    // Manipular a conexão de voz enviando streaming de dados
-
-    // =========================================================================
-    // Auxiliares
-
-    /**
-     * Extrair o canal de voz da mensagem
-     * 
-     * @param {Discord.Message} message
-     * @return {Promise} 
-     */
-    getVoiceChannel(message) {
-        return new Promise((resolve, reject) => {
-            const voiceChannel = message.member.voiceChannel;
-            if (!voiceChannel)
-                reject(new CustomError.NotInVoiceChannelError());
-            else
-                resolve(voiceChannel);
-        });
-    }
 }
 
 /**
+ * =============================================================================
  * Controlador de estados do bot
- * 
+ * -----------------------------------------------------------------------------
  * @author rafaeltoyo
+ * =============================================================================
  */
-export class StateController {
+export class GuildStateController {
+
     constructor() {
-        /**
-         * @type {Collection<Discord.Snowflake, State>}
-         */
+        /** @type {Collection<Discord.Snowflake, GuildState>} */
         this.states = new Discord.Collection();
     }
 
+    /**
+     * @param {Discord.Message} message 
+     * @return {Request}
+     */
+    createRequest(message) {
+        return new Request(message);
+    }
 
-    // =========================================================================
+    /**
+     * @param {Request} request 
+     * @return {Promise<Discord.VoiceConnection>}
+     */
+    async changeVoiceChannel(request) {
+        const state = this.getState(request.guild);
+        return await state.reconnect(request.voiceChannel);
+    }
+
+    /**
+     * @param {Request} request 
+     * @return {*}
+     */
+    playMusic(request) {
+        const state = this.getState(request.guild);
+        return state.player.play(request);
+    }
+
+    // -------------------------------------------------------------------------
     // Basic method
 
     /**
@@ -142,34 +211,27 @@ export class StateController {
      * @param {Discord.Guild} guild
      */
     createState(guild) {
-        const state = new State(guild);
-        this.getStates().set(guild.id, state);
+        const state = new GuildState(guild);
+        this.states.set(guild.id, state);
         return state;
     }
 
     /**
      * Restaurar um estado para uma <Guild>
      * @param {Discord.Guild} guild
-     * @return {State}
+     * @return {GuildState}
      */
     getState(guild) {
-        return this.getStates().get(guild.id) || this.createState(guild);
-    }
-
-    /**
-     * @return {Discord.Collection<Discord.Snowflake, State>}
-     */
-    getStates() {
-        return this.states;
+        return this.states.get(guild.id) || this.createState(guild);
     }
 
     destroyState(guild) {
-        this.getStates().delete(guild.id);
+        this.states.delete(guild.id);
     }
 
     async destroyAll() {
-        this.getStates().forEach(state => state.disconnect());
-        await Promise.all(this.getStates().map(state => state.disconnect().catch(error => {})));
-        this.getStates().deleteAll();
+        this.states.forEach(state => state.disconnect());
+        await Promise.all(this.states.map(state => state.disconnect().catch(error => { })));
+        this.states.deleteAll();
     }
 }

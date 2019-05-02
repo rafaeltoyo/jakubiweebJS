@@ -29,8 +29,8 @@ class Stop extends BaseCommand {
      */
     execute(bot, msg) {
         const state = bot.states.getState(msg.guild);
-        state.disconnect()
-            .then(conn => {
+        (async () => { return state.disconnect() })()
+            .then(() => {
                 msg.reply(":(")
             })
             .catch(error => {
