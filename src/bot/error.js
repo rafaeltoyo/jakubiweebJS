@@ -54,54 +54,63 @@ export class BiakError extends Error {
     }
 }
 
-/**
- * @author rafaeltoyo
- */
+/** @author rafaeltoyo */
 export class SimpleBiakError extends BiakError {
     /**
      * @param {string} content
      */
     constructor(content) {
         super(null, content);
-
         this.constructor = SimpleBiakError;
         this.__proto__ = SimpleBiakError.prototype;
     }
 }
 
-/**
- * @author rafaeltoyo
- */
+/** @author rafaeltoyo */
 export class NotImplementedError extends BiakError {
-    /**
-     * 
-     */
     constructor() {
-        super(
-            "Não implementado",
-            "Funcionalidade ainda não implementada pelos Devs"
-        );
-
+        super(null, "Funcionalidade ainda não implementada pelos Devs");
         this.constructor = NotImplementedError;
         this.__proto__ = NotImplementedError.prototype;
     }
 }
 
-/**
- * @author rafaeltoyo
- */
-export class NotInVoiceChannelError extends BiakError {
-    /**
-     * 
-     */
+/** @author rafaeltoyo */
+export class UserNotInVoiceChannelError extends BiakError {
     constructor() {
-        super(
-            null,
-            "Tá fora da festinha, sem rosquinha para você!"
-        );
+        super(null, "Você não está em um canal de voz!");
+        this.constructor = UserNotInVoiceChannelError;
+        this.__proto__ = UserNotInVoiceChannelError.prototype;
+    }
+}
 
+/** @author rafaeltoyo */
+export class NotInVoiceChannelError extends BiakError {
+    constructor() {
+        super(null, "Não estou em um canal de voz!");
         this.constructor = NotInVoiceChannelError;
         this.__proto__ = NotInVoiceChannelError.prototype;
+    }
+}
+
+/** @author rafaeltoyo */
+export class AlreadyInVoiceChannelError extends BiakError {
+    constructor() {
+        super(null, "Já estou em um canal de voz!");
+        this.constructor = AlreadyInVoiceChannelError;
+        this.__proto__ = AlreadyInVoiceChannelError.prototype;
+    }
+}
+
+// =============================================================================
+// Erros no MusicPlayer
+
+/** @author rafaeltoyo */
+export class NotPlayingError extends BiakError {
+    constructor() {
+        super(null, "Não estou tocando nada no momento.");
+        this.constructor = NotPlayingError;
+        this.__proto__ = NotPlayingError.prototype;
     }
 }
 

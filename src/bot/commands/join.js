@@ -28,20 +28,16 @@ class Join extends BaseCommand {
      * @param {Message} msg Mensagem que invocou o comando.
      */
     execute(bot, msg) {
-        try {
-            const req = bot.states.createRequest(msg);
-
-            bot.states.changeVoiceChannel(req)
-                .then(conn => {
-                    msg.reply("Watashi ga Kita!")
-                })
-                .catch(error => {
-                    msg.channel.send(customErrorHandler(error));
-                });
-        }
-        catch (e) {
-            msg.channel.send(customErrorHandler(error));
-        }
+        (async () => { return bot.getState(msg) })()
+            .then(state => {
+                return state.swap(msg.member.voiceChannel)
+            })
+            .then(conn => {
+                msg.reply("Watashi ga Kita!")
+            })
+            .catch(error => {
+                msg.channel.send(customErrorHandler(error));
+            });
     }
 }
 

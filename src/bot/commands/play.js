@@ -4,7 +4,7 @@ import { BaseCommand } from "../command";
 import { customErrorHandler } from "../error";
 
 /**
- * Comando <stop>
+ * Comando <play>
  * 
  * @author rafaeltoyo
  */
@@ -29,16 +29,9 @@ class Play extends BaseCommand {
      * @param {string[]} args Argumentos fornecidos para o comando.
      */
     execute(bot, msg, ...args) {
-        const query = args.join(" ");
-        const request = bot.states.createRequest(msg);
-
-        bot.states.changeVoiceChannel(request)
-            .then(conn => {
-                return bot.api.yt.play(query, msg.member);
-            })
+        bot.api.yt.search(args.join(" "))
             .then(music => {
-                request.music = music;
-                bot.states.playMusic(request);
+                return bot.getState(msg).playMusic(msg, music);
             })
             .catch(error => msg.channel.send(customErrorHandler(error)));
     }

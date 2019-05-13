@@ -120,63 +120,35 @@ export class YoutubeAPI {
     }
 
     /**
-     * 
+     * Buscar uma música pela API do YouTube
      * @param {string} query 
      * @param {Discord.GuildMember} requester
      * @return {Promise<YoutubeMusic>}
      */
-    play(query, requester) {
-        return new Promise((resolve, reject) => {
-            parseYTUrl(query)
-                .then(videoId => this.details(videoId))
-                .catch(error => {
-                    if (error instanceof CustomError.BiakError) throw error;
-                    return this.search(query);
-                })
-                .then(video => {
-                    console.log(video)
-                    resolve(new YoutubeMusic(video, requester))
-                })
-                .catch(error => reject(error));
-        });
-    }
+    async search(query, requester) {
+        let videoId = null;
+        let res = null;
 
-    /**
-     * 
-     * @param {string} query 
-     * @return {Promise<youtube_v3.Schema$SearchResult>}
-     */
-    search(query) {
-        return new Promise((resolve, reject) => {
-            this.conn.search.list(this.defaultOptions({ q: query }))
-                .then(res => {
-                    checkResponse(res);
-                    return res.data.items[0];
-                })
-                .then(video => this.details(video.id.videoId))
-                .then(data => resolve(data))
-                .catch(error => reject(error));
-        });
-    }
+        try {
+            // Tentar interpretar a entrada como uma URL do Youtube
+            videoId = await parseYTUrl(query);
+        }
+        catch (e) {
+            // Erros de API
+            if (error instanceof CustomError.BiakError) throw error;
 
-    /**
-     * 
-     * @param {string} videoId 
-     * @return {Promise<youtube_v3.Schema$SearchResult>}
-     */
-    details(videoId) {
-        return new Promise((resolve, reject) => {
-            const options = {
-                id: videoId,
-                part: "snippet,contentDetails"
-            };
-            this.conn.videos.list(options)
-                .then(res => {
-                    checkResponse(res);
-                    resolve(res.data.items[0]);
-                })
-                .catch(error => reject(error));
-        });
+            // URL inválida, tratar como simples busca
+            res = await this.conn.search.list(this.defaultOptions({ q: query }));
+            checkResponse(res);
+            videoId = res.data.items[0].id.videoId;
+        }
+
+        // Consultar mais detalhes do vídeo
+        res = await this.conn.videos.list({ id: videoId, part: "snippet,contentDetails" });
+        checkResponse(res);
+
+        // Construir a representação do vídeo
+        return new YoutubeMusic(res.data.items[0], requester);
     }
 
     defaultOptions(options) {

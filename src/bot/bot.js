@@ -10,7 +10,7 @@ import { loadCommands, parseCommand, BaseCommand, HelpCmd } from "./command";
 
 import { YoutubeAPI } from "./api/youtube";
 
-import { GuildStateController } from "./voice/state";
+import { GuildStateController, GuildState } from "./voice/state";
 
 /**
  * Classe principal do bot
@@ -36,8 +36,11 @@ export class Jakubiweeb {
          */
         this.help = new HelpCmd();
 
-        /** @type {GuildStateController} */
-        this.states = new GuildStateController();
+        /**
+         * Controle de estado em multiplas Guildas
+         * @type {Discord.Collection<Discord.Snowflake, GuildState>} 
+         */
+        this.states = new Discord.Collection();
 
         this.api = {
             yt: new YoutubeAPI(this.config.ytdl.token, this.config.ytdl.regionCode)
@@ -141,7 +144,12 @@ export class Jakubiweeb {
      */
     onFinished() {
         (async () => Logger.info("Stopping the bot ..."))()
-            .then(() => { return this.states.destroyAll() })
+            .then(() => {
+                return Promise.all(this.states.map(state => {
+                    state.disconnect().catch(e => Logger.err(e))
+                }))
+            })
+            .then(() => { return this.states.deleteAll() })
             .then(() => { return this.client.destroy() })
             .then(() => process.exit(0))
             .catch(e => this.onError(e));
@@ -154,6 +162,18 @@ export class Jakubiweeb {
 
     // =========================================================================
     // Auxiliares
+
+    /**
+     * @param {Discord.Message} message Mensagem com os dados necessários
+     */
+    getState(message) {
+        const guild = message.guild;
+        if (!guild) throw new CustomError.GuildOnlyCmdError();
+
+        if (!this.states.has(guild.id))
+            this.states.set(guild.id, new GuildState(guild));
+        return this.states.get(guild.id);
+    }
 
     /**
      * Retornar o comando pelo nome/alias
