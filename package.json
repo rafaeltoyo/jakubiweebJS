@@ -34,6 +34,7 @@
     "erlpack": "github:hammerandchisel/erlpack",
     "googleapis": "^39.2.0",
     "libsodium-wrappers": "^0.7.5",
+    "lodash": "^4.17.14",
     "moment": "^2.24.0",
     "node-opus": "^0.3.2",
     "uws": "^100.0.1",
