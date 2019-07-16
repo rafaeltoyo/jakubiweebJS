@@ -28,9 +28,10 @@ class Stop extends BaseCommand {
      * @param {Message} msg Mensagem que invocou o comando.
      */
     execute(bot, msg) {
-        const state = bot.states.getState(msg.guild);
-        (async () => { return bot.getState(msg) })()
+        (async () => { return bot.getState(msg); })()
             .then(state => {
+                state.player.stop();
+
                 return (async () => state.leave())()
             })
             .then(() => {

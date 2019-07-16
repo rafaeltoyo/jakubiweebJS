@@ -16,7 +16,7 @@ class Skip extends BaseCommand {
             ["skip"],
             "[skip]",
             5,
-            true,
+            false,
             true,
             true
         );

@@ -1,4 +1,4 @@
-import { Message } from "discord.js";
+import { Message, RichEmbed } from "discord.js";
 import { Jakubiweeb } from "../bot";
 import { BaseCommand } from "../command";
 import { customErrorHandler } from "../error";
@@ -8,15 +8,15 @@ import { customErrorHandler } from "../error";
  * 
  * @author rafaeltoyo
  */
-class Play extends BaseCommand {
+class Queue extends BaseCommand {
     constructor() {
         super(
-            "play",
-            "Tocar musiquinhas.",
-            ["p"],
-            "[play <nome da musica>]",
+            "queue",
+            "Lista de músicas.",
+            ["q"],
+            "[queue <número da página>]",
             5,
-            true,
+            false,
             true,
             true
         );
@@ -29,7 +29,13 @@ class Play extends BaseCommand {
      * @param {string[]} args Argumentos fornecidos para o comando.
      */
     execute(bot, msg, ...args) {
-        bot.api.yt.search(args.join(" "), msg.member)
+        embed = new RichEmbed();
+
+        bot.getState(msg).player.queue.forEach((req, idx, reqs) => {
+            req.music.description;
+        });
+
+        bot.api.yt.search(args.join(" "))
             .then(music => {
                 return bot.getState(msg).playMusic(msg, music);
             })
@@ -40,4 +46,4 @@ class Play extends BaseCommand {
     }
 }
 
-module.exports = new Play();
+module.exports = new Queue();

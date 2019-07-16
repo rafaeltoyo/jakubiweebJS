@@ -1,8 +1,9 @@
 import Discord from "discord.js";
 import { Mutex } from 'async-mutex';
 
-import { Request } from "./state";
+import { Request } from "./request";
 import * as CustomError from "../error";
+import Logger from "../../utils/log";
 
 
 const DEFAULT_VOLUME = 0.3;
@@ -69,39 +70,65 @@ export class MusicPlayer {
     }
 
     // -------------------------------------------------------------------------
-    // Configurações
+    // Settings
 
-    setVolume(v) { this.volume = (v >= 1 && v <= 0) ? parseFloat(v) : DEFAULT_VOLUME; }
+    setVolume(v) {
+        this.volume = (v >= 1 && v <= 0) ? parseFloat(v) : DEFAULT_VOLUME;
+    }
 
     // -------------------------------------------------------------------------
     // Listener
 
     onMusicEnd(reason) {
+        Logger.log("Music ended" + (!reason ? "" : ": " + reason));
+
         // Destroying current dispatcher (current music ended)
         this.dispatcher = undefined;
+        this.getCurrentMusic().music.stop();
+
+        // Continue when the reason isn't equals 'stop'
         if (reason === "stop") return;
 
-        if (this.queue.length <= this.queue.pointer) {
-            // Empty queue
-            // Autoplay?
+        // Move the pointer to the next music
+        this.queue.pointer++;
+
+        // Have more musics to play?
+        if (this.hasMusic()) {
+            // Play the current music
+            this.startCurrentMusic();
         }
         else {
-            this.queue.pointer++;
-            this.startCurrentMusic();
+            // The queue doesn't have more music
+
+            if (this.queue.length > 0) {
+                // Has a previous music
+                /** @todo AUTOPLAY */
+            }
+            else {
+                // Empty queue
+                // waiting for new entries
+            }
         }
     }
 
     startCurrentMusic() {
-        if (this.queue.length <= this.queue.pointer)
-            return false;
+        // Has music to play?
+        if (!(this.hasMusic())) return false;
 
-        const request = this.queue[this.queue.pointer];
+        // Get the current request
+        const request = this.getCurrentMusic();
 
+        // Prepare the dispatcher with the current music
+        Logger.log(request.music);
         this.dispatcher = request.music.play(this.voiceConnection);
         this.dispatcher.setVolume(this.volume);
         this.dispatcher.on('end', reason => this.onMusicEnd(reason));
-        this.dispatcher.on('error', error => this.skip());
+        this.dispatcher.on('error', error => {
+            this.skip();
+            Logger.err(error);
+        });
 
+        // Notify all users with what is playing now
         request.notifyPlayingMusic()
             .then(m => {
                 const aux = this.nowPlayingMsg;
@@ -109,14 +136,14 @@ export class MusicPlayer {
                 if (aux) return aux.delete();
             })
             .then(m => {
-                return Promise.all(request.enqueuedMsgs.map(msg => msg.delete().catch(e => { })));
+                // Delete all request message
+                return Promise.all(request.enqueuedMsgs.map(msg => {
+                    msg.delete().catch(e => { /* ignore the exception */ });
+                }));
             })
-            .then(msgs => {
-                request.enqueuedMsgs = [];
-            })
-            .catch(e => {
-                request.enqueuedMsgs = [];
-            });
+            .then(msgs => { request.enqueuedMsgs = []; })
+            .catch(e => { request.enqueuedMsgs = []; });
+        return true;
     }
 
     /**
@@ -124,13 +151,15 @@ export class MusicPlayer {
      * @param {Request} request 
      */
     play(request) {
-        if (!request.music) throw new TypeError("Request without music!");
+        // The request needs a music
+        if (!request.music) throw new Error("Request without music!");
 
+        // Adding that in the queue
         this.queue.push(request);
 
         if (!this.isPlaying()) {
-            this.queue.pointer = this.queue.pointer < 0 ? 0 : this.queue.length - 1;
-            this.startCurrentMusic();
+            this.queue.pointer = (this.queue.length - 1);
+            if (!this.startCurrentMusic()) throw new Error("Error until starting the queue")
         }
         else {
             request.notifyEnqueuedMusic().then(m => request.enqueuedMsgs.push(m));
@@ -138,20 +167,29 @@ export class MusicPlayer {
     }
 
     clear() {
+        // Clear the queue
         this.queue = [];
+        // Reset the music pointer
         this.queue.pointer = -1;
-        if (this.isPlaying()) {
-            this.skip();
-        }
+        // If the player is playing any music so stop that
+        if (this.isPlaying()) this.stop();
     }
 
     skip() {
+        if (!this.dispatcher) return;
+
+        // Pause the dispatcher
         this.dispatcher.pause();
+        // Invoke 'end' event with 'skip' reason
         this.dispatcher.end("skip");
     }
 
     stop() {
+        if (!this.dispatcher) return;
+
+        // Pause the dispatcher
         this.dispatcher.pause();
+        // Invoke 'end' event with 'stop' reason
         this.dispatcher.end("stop");
     }
 
@@ -175,5 +213,18 @@ export class MusicPlayer {
         this.dispatcher.pause();
     }
 
+    // -------------------------------------------------------------------------
+    // Utils
+
     isPlaying() { return this.dispatcher; }
+
+    isQueueEmpty() { return this.queue.length <= 0 }
+
+    isLastMusic() { return this.queue.pointer >= (this.queue.length - 1) }
+
+    isValidMusic() { return this.queue.pointer <= (this.queue.length - 1); }
+
+    hasMusic() { return !(this.isQueueEmpty()) && (this.isValidMusic()); }
+
+    getCurrentMusic() { return this.queue[this.queue.pointer]; }
 }

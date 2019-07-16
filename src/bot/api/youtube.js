@@ -58,7 +58,7 @@ function parseYTUrl(url) {
             else reject(new CustomError.SimpleBiakError("Url sem vídeo."));
         }
         else {
-            reject(new CustomError.SimpleBiakError("Serviço não implementado para " + parsedUrl.hostname));
+            reject("Serviço não implementado para " + parsedUrl.hostname);
         }
     });
 }
@@ -84,10 +84,9 @@ export class YoutubeMusic extends Music {
      * @return {Discord.StreamDispatcher}
      */
     play(voiceConnection) {
-        const stream = ytdl(this.videoUrl, ytdlOptions);
-        const conn = voiceConnection.playStream(stream);
+        let stream = ytdl(this.videoUrl, ytdlOptions);
         this.status = Music.PLAYING;
-        return conn;
+        return voiceConnection.playStream(stream);
     }
 
     getEmbed() {
@@ -133,9 +132,10 @@ export class YoutubeAPI {
             // Tentar interpretar a entrada como uma URL do Youtube
             videoId = await parseYTUrl(query);
         }
-        catch (e) {
+        catch (error) {
             // Erros de API
             if (error instanceof CustomError.BiakError) throw error;
+            //else console.log(error);
 
             // URL inválida, tratar como simples busca
             res = await this.conn.search.list(this.defaultOptions({ q: query }));
@@ -148,7 +148,9 @@ export class YoutubeAPI {
         checkResponse(res);
 
         // Construir a representação do vídeo
-        return new YoutubeMusic(res.data.items[0], requester);
+        let music = new YoutubeMusic(res.data.items[0], requester);
+        music.setDuration(res.data.items[0].contentDetails.duration);
+        return music;
     }
 
     defaultOptions(options) {

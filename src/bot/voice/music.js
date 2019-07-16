@@ -53,7 +53,9 @@ export class Music {
     /**
      * Configurar a música para o status parado
      */
-    stop() { this.status = Music.STOPPED; }
+    stop() {
+        this.status = Music.STOPPED;
+    }
 
     /**
      * Inicializa o atributo duration (pois é obtido em uma consulta separada).
