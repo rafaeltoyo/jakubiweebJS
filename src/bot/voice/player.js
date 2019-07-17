@@ -8,43 +8,12 @@ import Logger from "../../utils/log";
 
 const DEFAULT_VOLUME = 0.3;
 
-/** @author rafaeltoyo */
-class MusicPlayerQueue {
-    constructor() {
-        /** @type {MusicPlayerItem[]} */
-        this.items = [];
-        /** @type {Number} */
-        this.iter = -1;
-    }
-
-    clear() {
-        this.items = [];
-        this.iter = -1;
-    }
-
-    /** @return {boolean} */
-    isEmpty() {
-        return (this.items.length - 1) <= (this.iter);
-    }
-
-    /** @return {MusicPlayerItem} */
-    next() {
-        if (this.isEmpty()) throw new TypeError("End of music queue");
-        return this.items[++this.iter];
-    }
-
-    /**
-     * @param {MusicPlayerItem} music Nova música
-     */
-    add(music) {
-        this.items.push(music);
-    }
-}
-
 /**
+ * =============================================================================
  * Classe de controle da reprodução de áudio
- * 
+ * -----------------------------------------------------------------------------
  * @author rafaeltoyo
+ * =============================================================================
  */
 export class MusicPlayer {
     /**
@@ -83,8 +52,9 @@ export class MusicPlayer {
         Logger.log("Music ended" + (!reason ? "" : ": " + reason));
 
         // Destroying current dispatcher (current music ended)
-        this.dispatcher = undefined;
         this.getCurrentMusic().music.stop();
+        this.dispatcher.pause();
+        this.dispatcher = undefined;
 
         // Continue when the reason isn't equals 'stop'
         if (reason === "stop") return;
@@ -119,7 +89,6 @@ export class MusicPlayer {
         const request = this.getCurrentMusic();
 
         // Prepare the dispatcher with the current music
-        Logger.log(request.music);
         this.dispatcher = request.music.play(this.voiceConnection);
         this.dispatcher.setVolume(this.volume);
         this.dispatcher.on('end', reason => this.onMusicEnd(reason));
@@ -127,6 +96,8 @@ export class MusicPlayer {
             this.skip();
             Logger.err(error);
         });
+
+        Logger.info(request.music);
 
         // Notify all users with what is playing now
         request.notifyPlayingMusic()
@@ -167,12 +138,12 @@ export class MusicPlayer {
     }
 
     clear() {
+        // If the player is playing any music so stop that
+        if (this.isPlaying()) this.stop();
         // Clear the queue
         this.queue = [];
         // Reset the music pointer
         this.queue.pointer = -1;
-        // If the player is playing any music so stop that
-        if (this.isPlaying()) this.stop();
     }
 
     skip() {
@@ -211,6 +182,10 @@ export class MusicPlayer {
         if (this.dispatcher.paused)
             throw new CustomError.SimpleBiakError("Já estou pausado");
         this.dispatcher.pause();
+    }
+
+    destroy() {
+        this.clear();
     }
 
     // -------------------------------------------------------------------------

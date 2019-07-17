@@ -103,4 +103,15 @@ export class GuildState {
         }
     }
 
+    destroy() {
+        if (!this.player) {
+            this.player.destroy();
+            this.player = undefined;
+        }
+        if (!this.voiceChannel) {
+            this.voiceChannel.connection.disconnect();
+            this.voiceChannel.leave();
+            this.voiceChannel = undefined;
+        }
+    }
 }

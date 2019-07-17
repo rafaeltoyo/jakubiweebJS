@@ -146,7 +146,7 @@ export class Jakubiweeb {
         (async () => Logger.info("Stopping the bot ..."))()
             .then(() => {
                 return Promise.all(this.states.map(state => {
-                    state.disconnect().catch(e => Logger.err(e))
+                    (async () => state.destroy())().catch(e => {});
                 }))
             })
             .then(() => { return this.states.deleteAll() })
