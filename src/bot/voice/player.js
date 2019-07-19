@@ -41,6 +41,10 @@ export class MusicPlayer {
     // -------------------------------------------------------------------------
     // Settings
 
+    /**
+     * Change the volume
+     * @param {Number} v 
+     */
     setVolume(v) {
         this.volume = (v >= 1 && v <= 0) ? parseFloat(v) : DEFAULT_VOLUME;
     }
@@ -48,6 +52,10 @@ export class MusicPlayer {
     // -------------------------------------------------------------------------
     // Listener
 
+    /**
+     * Handling end of the current music
+     * @param {String} reason 
+     */
     onMusicEnd(reason) {
         Logger.log("Music ended" + (!reason ? "" : ": " + reason));
 
@@ -94,6 +102,7 @@ export class MusicPlayer {
         this.dispatcher.on('end', reason => this.onMusicEnd(reason));
         this.dispatcher.on('error', error => {
             this.skip();
+            Logger.info("Error on current music!");
             Logger.err(error);
         });
 
@@ -118,7 +127,7 @@ export class MusicPlayer {
     }
 
     /**
-     * 
+     * Create a music request.
      * @param {Request} request 
      */
     play(request) {
