@@ -35,7 +35,7 @@
     "googleapis": "^39.2.0",
     "libsodium-wrappers": "^0.7.5",
     "lodash": "^4.17.14",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "node-opus": "^0.3.2",
     "uws": "^100.0.1",
     "ytdl-core": "^0.29.3"
